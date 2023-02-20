@@ -1142,6 +1142,37 @@ def load_fredmd_data(filename):
 
     # In case you one day want to play with quarterly data:
         #dta_q=dta_q, transform_q=transform_q, factors_q=factors_q)
+        
+def load_fredmd_data_extlink(filename):
+    #base_url = 'https://s3.amazonaws.com/files.fred.stlouisfed.org/fred-md'
+    
+    # - FRED-MD --------------------------------------------------------------
+    # 1. Download data
+    #orig_m = (pd.read_csv(f'{base_url}/monthly/{vintage}.csv')
+                #.dropna(how='all'))
+    orig_m = (pd.read_csv(filename).dropna(how='all'))
+    
+    # 2. Extract transformation information
+    transform_m = orig_m.iloc[0, 1:]
+    orig_m = orig_m.iloc[1:]
+
+    # 3. Extract the date as an index
+    orig_m.index = pd.PeriodIndex(orig_m.sasdate.tolist(), freq='M')
+    orig_m.drop('sasdate', axis=1, inplace=True)
+
+    # 4. Apply the transformations
+    dta_m = orig_m.apply(transform, axis=0,
+                         transforms=transform_m)
+
+    # 5. Remove outliers (but not in 2020)
+    dta_m.loc[:'2019-12'] = remove_outliers(dta_m.loc[:'2019-12'])
+    
+    return types.SimpleNamespace(
+        orig_m=orig_m, #orig_q=orig_q,
+        dta_m=dta_m, transform_m=transform_m)
+
+    # In case you one day want to play with quarterly data:
+        #dta_q=dta_q, transform_q=transform_q, factors_q=factors_q)
 
 def func_Future_lags(data,rhs_names,lags):
 
